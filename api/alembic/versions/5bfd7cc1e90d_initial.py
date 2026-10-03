@@ -52,23 +52,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('sku')
     )
-    op.create_table('tickets',
-    sa.Column('id', sa.String(length=40), nullable=False),
-    sa.Column('event_id', sa.String(length=70), nullable=False),
-    sa.Column('customer_id', sa.String(length=40), nullable=False),
-    sa.Column('order_id', sa.String(length=40), nullable=True),
-    sa.Column('channel', sa.String(length=30), nullable=False),
-    sa.Column('message', sa.Text(), nullable=False),
-    sa.Column('language', sa.String(length=30), nullable=False),
-    sa.Column('expected_intent', sa.String(length=30), nullable=False),
-    sa.Column('scenario', sa.String(length=60), nullable=True),
-    sa.Column('status', sa.String(length=30), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('messages', sa.JSON(), nullable=False),
-    sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('event_id')
-    )
     op.create_table('orders',
     sa.Column('id', sa.String(length=40), nullable=False),
     sa.Column('customer_id', sa.String(length=40), nullable=False),
@@ -84,6 +67,24 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
     sa.ForeignKeyConstraint(['product_id'], ['products.id'], ),
     sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('tickets',
+    sa.Column('id', sa.String(length=40), nullable=False),
+    sa.Column('event_id', sa.String(length=70), nullable=False),
+    sa.Column('customer_id', sa.String(length=40), nullable=False),
+    sa.Column('order_id', sa.String(length=40), nullable=True),
+    sa.Column('channel', sa.String(length=30), nullable=False),
+    sa.Column('message', sa.Text(), nullable=False),
+    sa.Column('language', sa.String(length=30), nullable=False),
+    sa.Column('expected_intent', sa.String(length=30), nullable=False),
+    sa.Column('scenario', sa.String(length=60), nullable=True),
+    sa.Column('status', sa.String(length=30), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('messages', sa.JSON(), nullable=False),
+    sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
+    sa.ForeignKeyConstraint(['order_id'], ['orders.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('event_id')
     )
     op.create_table('review_investigations',
     sa.Column('id', sa.String(length=50), nullable=False),
@@ -159,8 +160,8 @@ def downgrade() -> None:
     op.drop_table('runs')
     op.drop_table('reviews')
     op.drop_table('review_investigations')
-    op.drop_table('orders')
     op.drop_table('tickets')
+    op.drop_table('orders')
     op.drop_table('products')
     op.drop_table('vendors')
     op.drop_table('customers')

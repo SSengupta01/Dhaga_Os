@@ -1,20 +1,15 @@
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from dhaga.db import Base
+from dhaga.db import Base, engine
 
 config = context.config
 if config.config_file_name:
     fileConfig(config.config_file_name)
 target_metadata = Base.metadata
-database_url = os.getenv("DATABASE_URL", "sqlite:///./dhaga.db")
-if database_url.startswith("postgres://"):
-    database_url = "postgresql+psycopg://" + database_url[len("postgres://"):]
-elif database_url.startswith("postgresql://"):
-    database_url = "postgresql+psycopg://" + database_url[len("postgresql://"):]
+database_url = str(engine.url)
 config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 

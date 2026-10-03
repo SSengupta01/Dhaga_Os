@@ -166,13 +166,21 @@ def reset(seed_number: int = SEED_NUMBER):
                 msg = rng.choice(MESSAGES[intent]).format(order=order.id, sku=product.sku)
             if i > len(scenarios) and i % 29 == 0:
                 msg = msg + " aur jaldi batao pls"
+            provider_payload = (
+                {"source": "freshdesk", "ticket_id": f"FDE-{i:05d}", "requester_id": customer_id, "subject": "Customer support request", "body_text": msg}
+                if i % 2 else
+                {"source": "gupshup", "messageId": f"GSP-{i:05d}", "type": "text", "sender": {"id": customer_id, "phone": customers[int(customer_id[4:]) - 1].demo_phone}, "payload": {"text": msg}}
+            )
+            conversation = [{"sender": "customer", "text": msg, "at": (NOW - timedelta(hours=i % 120)).isoformat(), "provider_payload": provider_payload}]
+            if i > len(scenarios) and i % 17 == 0:
+                conversation.append({"sender": "customer", "text": "Please check again, I am still waiting", "at": (NOW - timedelta(hours=i % 120 - 1)).isoformat(), "provider_payload": {"source": "followup", "event_id": f"FOLLOW-{i:05d}"}})
             tickets.append(Ticket(
                 id=f"TKT{i:05d}", event_id=f"FDE-{i:05d}", customer_id=customer_id,
                 order_id=linked_id if intent != "unknown" else None,
                 channel="FRESHDESK" if i % 2 else "GUPSHUP_WHATSAPP", message=msg,
                 language=["en", "hinglish", "roman_hindi"][i % 3], expected_intent=intent, scenario=scenario,
                 status="new", created_at=NOW - timedelta(hours=i % 120),
-                messages=[{"sender": "customer", "text": msg, "at": (NOW - timedelta(hours=i % 120)).isoformat()}],
+                messages=conversation,
             ))
         db.add_all(tickets)
         db.flush()
@@ -200,7 +208,13 @@ def verify():
     with SessionLocal() as db:
         counts = {name: db.scalar(select(func.count()).select_from(table)) for name, table in (("customers", Customer), ("orders", Order), ("shipments", Shipment), ("tickets", Ticket), ("reviews", Review), ("products", Product), ("vendors", Vendor))}
         assert counts == {"customers": 750, "orders": 3000, "shipments": 3000, "tickets": 750, "reviews": 1000, "products": 50, "vendors": 5}, counts
-        assert db.scalar(select(func.count()).select_from(Ticket).where(Ticket.scenario.is_not(None))) >= 50
+        assert db.scalar(select(func.count()).select_from(Ticket).where(Ticket.expected_intent == "wismo")) == 435
+        assert db.scalar(select(func.count()).select_from(Ticket).where(Ticket.scenario.is_not(None))) == 50
+        assert db.scalar(select(func.count()).select_from(Order).join(Customer, Order.customer_id == Customer.id).join(Product, Order.product_id == Product.id)) == 3000
+        assert db.scalar(select(func.count()).select_from(Shipment).join(Order, Shipment.order_id == Order.id)) == 3000
+        assert db.scalar(select(func.count()).select_from(Review).join(Product, Review.product_id == Product.id)) == 1000
+        assert db.scalar(select(func.count()).select_from(Ticket).join(Customer, Ticket.customer_id == Customer.id).outerjoin(Order, Ticket.order_id == Order.id).where((Ticket.order_id.is_(None)) | (Order.id.is_not(None)))) == 750
+        assert db.get(Ticket, "TKT00001").message == "Where is my order ORD000001?"
         return counts
 
 

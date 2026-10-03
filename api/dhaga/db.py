@@ -83,7 +83,7 @@ class Ticket(Base):
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
     event_id: Mapped[str] = mapped_column(String(70), unique=True)
     customer_id: Mapped[str] = mapped_column(ForeignKey("customers.id"))
-    order_id: Mapped[str | None] = mapped_column(String(40))
+    order_id: Mapped[str | None] = mapped_column(String(40), ForeignKey("orders.id"))
     channel: Mapped[str] = mapped_column(String(30))
     message: Mapped[str] = mapped_column(Text)
     language: Mapped[str] = mapped_column(String(30))
@@ -146,7 +146,7 @@ class Audit(Base):
 
 
 load_dotenv(Path(__file__).parents[1] / ".env")
-url = os.getenv("DATABASE_URL", "sqlite:///./dhaga.db")
+url = os.getenv("DATABASE_URL", "sqlite:///./dhaga-demo.db")
 if url.startswith("postgres://"):
     url = "postgresql+psycopg://" + url[len("postgres://"):]
 elif url.startswith("postgresql://") and "+psycopg" not in url:

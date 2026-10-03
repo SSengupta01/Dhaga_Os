@@ -61,6 +61,8 @@ The repository is set up for two Vercel projects rooted at `web` and `api`. Crea
 
 Vercel projects and managed Postgres require the owner's account access. The API's internal token blocks direct case access on Vercel if it is unset. The public `/health` endpoint can be used for deployment checks. Use the provided [final review checklist](FINAL_REVIEW.md) before presenting.
 
+The current [verification record](VERIFICATION.md) separates local checks from the live model and deployment checks that still need account access. Review and catalog changes share the synthetic demo database; reset restores the original records. Before a public pilot, add authentication, paid-model usage limits, and per-user isolation.
+
 ## Scope and provenance
 
 The brief and the three feature SOT files in this directory inform the implementation. The brief's roughly 9,000 weekly support tickets and 58% WISMO share are context, not measurements from the synthetic dataset. No Dhaga row-level data, production policy handbook, or live integration credentials were provided. A pilot must have Dhaga owners confirm policy text and connect production adapters first.
