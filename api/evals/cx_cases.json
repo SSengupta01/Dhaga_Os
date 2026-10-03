@@ -1,0 +1,22 @@
+[
+  {"ticket":"TKT00001","intent":"wismo","decision":"simulated_sent","reason":null},
+  {"ticket":"TKT00002","intent":"wismo","decision":"escalate","reason":"ORDER_CUSTOMER_MISMATCH"},
+  {"ticket":"TKT00003","intent":"wismo","decision":"escalate","reason":"TRACKING_UNAVAILABLE"},
+  {"ticket":"TKT00004","intent":"return","decision":"approval_required","reason":null},
+  {"ticket":"TKT00005","intent":"exchange","decision":"approval_required","reason":null},
+  {"ticket":"TKT00006","intent":"refund","decision":"escalate","reason":"INSPECTION_PENDING"},
+  {"ticket":"TKT00007","intent":"refund","decision":"approval_required","reason":null},
+  {"ticket":"TKT00008","intent":"cancellation","decision":"approval_required","reason":null},
+  {"ticket":"TKT00009","intent":"cancellation","decision":"escalate","reason":"ALREADY_DISPATCHED_OR_PROCESSING"},
+  {"ticket":"TKT00010","intent":"payment","decision":"simulated_sent","reason":null},
+  {"ticket":"TKT00011","intent":"product","decision":"simulated_sent","reason":null},
+  {"ticket":"TKT00012","intent":"compensation","decision":"escalate","reason":"COMPENSATION_POLICY_UNKNOWN"},
+  {"ticket":"TKT00013","intent":"unknown","decision":"escalate","reason":"UNTRUSTED_INSTRUCTION"},
+  {"ticket":"TKT00014","intent":"unknown","decision":"escalate","reason":"POLICY_UNKNOWN"},
+  {"ticket":"TKT00015","intent":"wismo","decision":"escalate","reason":"ORDER_NOT_FOUND"},
+  {"ticket":"TKT00016","intent":"wismo","decision":"escalate","reason":"ORDER_CUSTOMER_MISMATCH"},
+  {"ticket":"TKT00017","intent":"wismo","decision":"escalate","reason":"STALE_TRACKING"},
+  {"ticket":"TKT00018","intent":"unknown","decision":"escalate","reason":"UNTRUSTED_INSTRUCTION"},
+  {"ticket":"TKT00019","intent":"unknown","decision":"escalate","reason":"POLICY_UNKNOWN"},
+  {"ticket":"TKT00020","intent":"wismo","decision":"escalate","reason":"DISPUTED_DELIVERY"}
+]

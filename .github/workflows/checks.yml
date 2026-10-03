@@ -1,0 +1,35 @@
+name: checks
+on: [push, pull_request]
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.12'
+      - run: uv sync --extra dev
+      - run: uv run alembic upgrade head
+      - run: uv run python -m dhaga.seed reset
+      - run: uv run python -m dhaga.seed verify
+      - run: uv run pytest -q
+      - run: uv run python -m scripts.evaluate
+      - run: uv run ruff check --select E4,E7,E9,F dhaga tests scripts
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build

@@ -1,0 +1,10 @@
+{
+  "name": "dhaga-os",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "check": "npm --prefix web run check",
+    "types": "uv run --directory api python -m scripts.export_openapi && npm --prefix web run types:generate"
+  }
+}
