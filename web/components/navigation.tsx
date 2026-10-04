@@ -1,0 +1,6 @@
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Activity, Headphones, MessageSquareText, PackageCheck, ShieldCheck, Workflow } from "lucide-react";
+const links = [{href:"/",label:"Overview",icon:Activity},{href:"/cx",label:"CX Support",icon:Headphones},{href:"/reviews",label:"Review Intelligence",icon:MessageSquareText},{href:"/catalog",label:"Catalog Velocity Engine",icon:PackageCheck}];
+export function Navigation(){const path=usePathname();return <aside className="sidebar"><Link href="/" className="brand"><span className="brand-mark"><Workflow size={23}/></span><span><strong>DHAGA</strong><small>OS / INTELLIGENCE</small></span></Link><div className="sidebar-caption">OPERATIONS WORKSPACE</div><nav aria-label="Main navigation">{links.map(({href,label,icon:Icon})=><Link href={href} key={href} className={`nav-link ${path===href?"nav-active":""}`} aria-current={path===href?"page":undefined}><Icon size={18}/><span>{label}</span></Link>)}</nav><div className="sidebar-foot"><ShieldCheck size={22}/><h3>Built on evidence.</h3><p>Verified facts. Visible rules.<br/>Human decisions where they matter.</p><span className="sidebar-demo"><span className="live-dot"/>SYNTHETIC DEMO</span></div></aside>}

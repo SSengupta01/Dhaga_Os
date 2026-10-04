@@ -57,7 +57,9 @@ npm run build
 
 ## GitHub and Vercel deployment
 
-The repository is set up for two Vercel projects rooted at `web` and `api`. Create a managed Postgres database, set `DATABASE_URL` and `DEMO_SESSION_SECRET` on the API project, and run `uv run alembic upgrade head` plus `uv run python -m dhaga.seed reset` against that database before opening the frontend. Set `API_BASE_URL` to the API project's HTTPS URL and the **same** `DEMO_SESSION_SECRET` on the web project. Set `OPENROUTER_API_KEY` only on the API project if live models are desired. Add both project URLs and the GitHub commit SHA to the final review record. Never commit `.env` files.
+The public repository is [SSengupta01/Dhaga_Os](https://github.com/SSengupta01/Dhaga_Os). Deploy the repository root as **one Vercel project**, `dhaga-os`, using the root `vercel.json` Services configuration. It builds Next.js in `web` and FastAPI in `api` together. Only the web service has a public route; its existing API proxy reaches Python through the internal `API_BASE_URL` service binding. Do not manually override this binding in Vercel settings.
+
+Create a managed Postgres database and set `DATABASE_URL` plus a strong `DEMO_SESSION_SECRET` in the project's production environment. Run `uv run alembic upgrade head` and `uv run python -m dhaga.seed reset` against that database before opening the product. Both services share the project environment and the same secret. Set `OPENROUTER_API_KEY` if live models are desired. Record the single product URL and matching GitHub commit SHA in the final review record. Never commit `.env` files. See [Vercel Services](https://vercel.com/docs/services) and [service bindings](https://vercel.com/docs/services/bindings).
 
 Vercel projects and managed Postgres require the owner's account access. The API's internal token blocks direct case access on Vercel if it is unset. The public `/health` endpoint can be used for deployment checks. Use the provided [final review checklist](FINAL_REVIEW.md) before presenting.
 
@@ -66,3 +68,7 @@ The current [verification record](VERIFICATION.md) separates local checks from t
 ## Scope and provenance
 
 The brief and the three feature SOT files in this directory inform the implementation. The brief's roughly 9,000 weekly support tickets and 58% WISMO share are context, not measurements from the synthetic dataset. No Dhaga row-level data, production policy handbook, or live integration credentials were provided. A pilot must have Dhaga owners confirm policy text and connect production adapters first.
+
+## UI redesign (October 2026)
+
+The workspace now uses the approved navy/purple visual direction and varied source-backed charts. CX secondary views are Live tickets, Human review, Workflow explorer and CX analytics. Reviews has Product signals and Investigations; Catalog has Product pipeline, Drop readiness and Vendor intake. Chart data tables provide accessible alternatives. See [local redesign verification](UI_REDESIGN_VERIFICATION.md), [design QA](design-qa.md) and [implementation plan](UI_REDESIGN_IMPLEMENTATION_PLAN.md).

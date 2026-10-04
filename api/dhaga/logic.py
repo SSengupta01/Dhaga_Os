@@ -55,7 +55,7 @@ def _make_result(db: Session, ticket: Ticket, session_id: str, *, intent: str, d
     run = Run(id=f"RUN-{uuid.uuid4().hex[:12].upper()}", ticket_id=ticket.id, session_id=session_id, intent=intent,
               decision=decision, proposed_reply=reply, proposed_action=action, reason_codes=reasons,
               verified_facts=facts, policy_id=policy_id, trace=steps,
-              cost_usd=round(sum(float(step.get("estimated_cost_usd", 0)) for step in steps), 8))
+              cost_usd=round(sum(float(step.get("estimated_cost_usd") or 0) for step in steps), 8))
     db.add(run)
     db.commit()
     return run

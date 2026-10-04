@@ -23,6 +23,51 @@ def setup_module():
 client = TestClient(app)
 
 
+def test_dashboard_integrity_and_session_isolation():
+    headers = {"x-demo-session": "analytics-fresh"}
+    data = client.get("/dashboard", headers=headers).json()
+    assert sum(p["freshdesk"] + p["whatsapp"] for p in data["intake"]) == 750
+    assert sum(p["value"] for p in data["languages"]) == 750
+    assert sum(p["reviews"] for p in data["review_trend"]) == 1000
+    assert data["processed"] == 0 and data["review_queue"] == []
+    assert data["confidence_count"] == 0
+    assert all(p["prevalence"] is None for p in data["review_trend"])
+    other = {"x-demo-session": "analytics-test"}
+    for _ in range(2):
+        client.post("/cx/tickets/TKT00004/run", headers=other)
+    measured = client.get("/dashboard", headers=other).json()
+    assert measured["processed"] == 1 and len(measured["review_queue"]) == 1
+    assert client.get("/overview", headers=other).json()["cx"]["pending_approval"] == 1
+    assert client.get("/overview", headers=headers).json()["cx"]["pending_approval"] == 0
+
+
+def test_dashboard_filter_counts_and_evidence():
+    result = client.get("/cx/tickets?intent=wismo&limit=1").json()
+    assert result["total"] == 435 and len(result["items"]) == 1
+    assert "customer_name" in result["items"][0]
+    assert client.get("/cx/tickets?q=no-such-case").json()["total"] == 0
+    overview = client.get("/reviews/overview?issue=sizing").json()
+    for product in overview["products"][:5]:
+        rows = client.get(f"/reviews/products/{product['product_id']}?issue=sizing").json()["evidence"]
+        assert rows and all("sizing" in r["analysis"]["issues"] for r in rows)
+
+
+def test_readiness_is_consistent_across_views():
+    overview = client.get("/catalog/overview").json()
+    assert sum(overview["states"].values()) == len(overview["products"])
+    for product in overview["products"][:15]:
+        detail = client.get(f"/catalog/products/{product['id']}").json()
+        qa = client.post(f"/catalog/products/{product['id']}/qa").json()
+        assert product["status"] == detail["status"] == qa["status"]
+        assert product["workflow"]["blockers"] == qa["blockers"]
+
+
+def test_normalization_fills_missing_canonical_colour_without_clearing_other_blockers():
+    result = client.post("/catalog/products/PROD0022/normalize").json()
+    assert result["product"]["colour"]
+    assert "MISSING_COLOUR" not in result["blockers"]
+
+
 def run(number: int):
     return client.post(f"/cx/tickets/TKT{number:05d}/run").json()
 

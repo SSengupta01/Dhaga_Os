@@ -12,11 +12,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .db import Audit, Product, Review, ReviewInvestigation, Run, Ticket, Vendor, session
+from .db import Audit, Customer, Product, Review, ReviewInvestigation, Run, Ticket, Vendor, session
 from .logic import POLICY_PACK, decide_run, process_ticket
 from .seed import NOW, SEED_VERSION
 from .workflows import analyze_review, catalog_blockers, generate_catalog_copy, normalize_colour
 from .llm import evaluate
+from .dashboard import DashboardResponse, dashboard_data
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -36,6 +37,11 @@ def internal_access(x_internal_token: str | None = Header(default=None)):
 
 def demo_session(x_demo_session: str | None = Header(default=None)):
     return (x_demo_session or "public")[:80]
+
+
+@app.get("/dashboard", response_model=DashboardResponse, dependencies=[Depends(internal_access)])
+def dashboard(category: str = "", issue: str = "", db: Session = Depends(session), session_id: str = Depends(demo_session)):
+    return dashboard_data(db, session_id, category, issue)
 
 
 def serialize_run(run: Run):
@@ -65,14 +71,21 @@ def meta():
 
 
 @app.get("/overview", dependencies=[Depends(internal_access)])
-def overview(db: Session = Depends(session)):
+def overview(db: Session = Depends(session), session_id: str = Depends(demo_session)):
     ticket_count = db.scalar(select(func.count()).select_from(Ticket)) or 0
     counts = {k: db.scalar(select(func.count()).select_from(Ticket).where(Ticket.expected_intent == k)) or 0 for k in ["wismo", "return", "exchange", "refund", "cancellation", "payment", "product", "unknown"]}
-    product_states = {k: db.scalar(select(func.count()).select_from(Product).where(Product.status == k)) or 0 for k in ["ready", "needs_review", "blocked"]}
-    measured = db.scalars(select(Run.cost_usd).where(Run.cost_usd > 0)).all()
+    product_states = Counter(catalog_dict(p)["status"] for p in db.scalars(select(Product)))
+    latest = {}
+    for row in db.scalars(select(Run).where(Run.session_id == session_id).order_by(Run.created_at.desc(), Run.id)):
+        latest.setdefault(row.ticket_id, row)
+    measured = []
+    for row in latest.values():
+        calls = [s for s in row.trace if s.get("model")]
+        if calls and all(s.get("status") == "ok" and s.get("estimated_cost_usd") is not None for s in calls):
+            measured.append(sum(s["estimated_cost_usd"] for s in calls))
     per_case = round(sum(measured) / len(measured), 8) if measured else None
     return {"demo": True, "seed_version": SEED_VERSION,
-            "cx": {"total": ticket_count, "intents": counts, "pending_approval": db.scalar(select(func.count()).select_from(Run).where(Run.decision == "approval_required")) or 0},
+            "cx": {"total": ticket_count, "intents": counts, "pending_approval": sum(r.decision == "approval_required" for r in latest.values())},
             "reviews": {"total": db.scalar(select(func.count()).select_from(Review)) or 0, "negative": db.scalar(select(func.count()).select_from(Review).where(Review.rating <= 2)) or 0},
             "catalog": {"total": db.scalar(select(func.count()).select_from(Product)) or 0, "states": product_states},
             "cost_line": {"sampled_runs": len(measured), "mean_cost_usd": per_case,
@@ -93,14 +106,18 @@ def ticket_dict(ticket: Ticket):
 
 @app.get("/cx/tickets", dependencies=[Depends(internal_access)])
 def tickets(limit: int = Query(40, ge=1, le=100), offset: int = Query(0, ge=0), intent: str | None = None,
-            scenario_only: bool = False, db: Session = Depends(session)):
+            q: str = "", channel: str | None = None, scenario_only: bool = False, db: Session = Depends(session)):
     query = select(Ticket)
     if intent:
         query = query.where(Ticket.expected_intent == intent)
     if scenario_only:
         query = query.where(Ticket.scenario.is_not(None))
+    if q:
+        query = query.where(Ticket.message.ilike(f"%{q}%") | Ticket.id.ilike(f"%{q}%") | Ticket.scenario.ilike(f"%{q}%"))
+    if channel:
+        query = query.where(Ticket.channel == channel)
     rows = db.scalars(query.order_by(Ticket.id).limit(limit).offset(offset)).all()
-    return {"items": [ticket_dict(row) for row in rows], "total": db.scalar(select(func.count()).select_from(Ticket)) or 0}
+    return {"items": [{**ticket_dict(row), "customer_name": db.get(Customer, row.customer_id).name} for row in rows], "total": db.scalar(select(func.count()).select_from(query.subquery())) or 0}
 
 
 @app.get("/cx/tickets/{ticket_id}", dependencies=[Depends(internal_access)])
@@ -109,7 +126,7 @@ def ticket_detail(ticket_id: str, db: Session = Depends(session), session_id: st
     if not ticket:
         raise HTTPException(404, "Ticket not found")
     run = db.scalar(select(Run).where(Run.ticket_id == ticket_id, Run.session_id == session_id).order_by(Run.created_at.desc()))
-    return {"ticket": ticket_dict(ticket), "run": serialize_run(run) if run else None}
+    return {"ticket": {**ticket_dict(ticket), "customer_name": db.get(Customer, ticket.customer_id).name}, "run": serialize_run(run) if run else None}
 
 
 @app.post("/cx/tickets/{ticket_id}/run", dependencies=[Depends(internal_access)])
@@ -147,11 +164,15 @@ def audit(run_id: str, db: Session = Depends(session), session_id: str = Depends
 
 
 @app.get("/reviews/overview", dependencies=[Depends(internal_access)])
-def reviews_overview(db: Session = Depends(session)):
+def reviews_overview(category: str = "", issue: str = "", db: Session = Depends(session)):
     products = db.scalars(select(Product).order_by(Product.id)).all()
     output = []
     for product in products:
+        if category and product.category != category:
+            continue
         rows = db.scalars(select(Review).where(Review.product_id == product.id)).all()
+        if issue and not any(issue in (r.analysis or {}).get("issues", []) for r in rows):
+            continue
         issues = Counter(issue for r in rows for issue in (r.analysis or {}).get("issues", []))
         negatives = sum(r.rating <= 2 for r in rows)
         current = [r for r in rows if r.reviewed_at.replace(tzinfo=timezone.utc) >= NOW - timedelta(days=30)]
@@ -162,17 +183,19 @@ def reviews_overview(db: Session = Depends(session)):
                        "review_count": len(rows), "negative_count": negatives, "top_issue": issues.most_common(1)[0][0] if issues else None,
                        "issue_count": sum(issues.values()), "current_30d_count": len(current), "previous_30d_count": len(previous),
                        "current_negative_rate": current_negative_rate, "previous_negative_rate": previous_negative_rate,
-                       "alert": len(current) >= 5 and current_negative_rate >= 0.3 and current_negative_rate > previous_negative_rate * 1.5 and bool(issues)})
+                       "alert": len(current) >= 5 and len(previous) >= 5 and current_negative_rate >= 0.3 and current_negative_rate > previous_negative_rate * 1.5 and bool(issues)})
     output.sort(key=lambda x: (x["alert"], x["negative_count"]), reverse=True)
     return {"demo": True, "total_reviews": db.scalar(select(func.count()).select_from(Review)) or 0, "products": output}
 
 
 @app.get("/reviews/products/{product_id}", dependencies=[Depends(internal_access)])
-def review_product(product_id: str, db: Session = Depends(session)):
+def review_product(product_id: str, issue: str = "", db: Session = Depends(session)):
     product = db.get(Product, product_id)
     if not product:
         raise HTTPException(404, "Product not found")
-    rows = db.scalars(select(Review).where(Review.product_id == product_id).order_by(Review.reviewed_at.desc()).limit(50)).all()
+    rows = db.scalars(select(Review).where(Review.product_id == product_id).order_by(Review.reviewed_at.desc())).all()
+    if issue:
+        rows = [r for r in rows if issue in (r.analysis or {}).get("issues", [])]
     return {"product": {"id": product.id, "name": product.name, "sku": product.sku, "vendor_id": product.vendor_id},
             "evidence": [{"id": r.id, "rating": r.rating, "text": r.text, "date": r.reviewed_at.date().isoformat(), "analysis": r.analysis} for r in rows]}
 
@@ -230,23 +253,26 @@ def update_investigation(investigation_id: str, payload: InvestigationUpdate, db
 
 
 def catalog_dict(product: Product):
+    blockers = catalog_blockers(product)
+    state = "blocked" if any(b.startswith("MISSING") for b in blockers) else "needs_review" if blockers else "ready"
     return {"id": product.id, "sku": product.sku, "name": product.name, "vendor_id": product.vendor_id, "category": product.category,
             "colour": product.colour, "fabric": product.fabric, "price": product.price, "inventory": product.inventory,
             "raw_attributes": product.raw_attributes, "field_provenance": product.field_provenance,
-            "images": product.images, "workflow": product.workflow, "status": product.status, "target_drop": product.target_drop}
+            "images": product.images, "workflow": {**product.workflow, "blockers": blockers, "readiness_score": max(0, 100 - 25 * len(blockers))}, "status": state, "target_drop": product.target_drop}
 
 
 @app.get("/catalog/overview", dependencies=[Depends(internal_access)])
 def catalog_overview(db: Session = Depends(session)):
     products = db.scalars(select(Product).order_by(Product.id)).all()
-    states = Counter(p.status for p in products)
-    blockers = Counter(b for p in products for b in p.workflow.get("blockers", []))
+    records = [catalog_dict(p) for p in products]
+    states = Counter(p["status"] for p in records)
+    blockers = Counter(b for p in records for b in p["workflow"].get("blockers", []))
     drops = defaultdict(lambda: Counter())
-    for p in products:
-        drops[p.target_drop][p.status] += 1
+    for p in records:
+        drops[p["target_drop"]][p["status"]] += 1
     return {"demo": True, "total": len(products), "states": dict(states), "blockers": dict(blockers),
             "drops": [{"date": date, "states": dict(counts)} for date, counts in sorted(drops.items())],
-            "products": [catalog_dict(p) for p in products]}
+            "products": records}
 
 
 @app.get("/catalog/products/{product_id}", dependencies=[Depends(internal_access)])
@@ -276,7 +302,7 @@ def normalize_product(product_id: str, db: Session = Depends(session)):
     if not raw:
         raise HTTPException(422, "Raw colour missing")
     canonical, method, call_trace = normalize_colour(raw)
-    if canonical and not product.field_provenance.get("colour", {}).get("approved"):
+    if canonical and (not product.field_provenance.get("colour", {}).get("approved") or not product.colour):
         provenance = dict(product.field_provenance)
         provenance["colour"] = {"source": "vendor_csv", "raw": raw, "canonical": canonical, "resolution_method": method,
                                 "approved": method != "model_suggestion"}

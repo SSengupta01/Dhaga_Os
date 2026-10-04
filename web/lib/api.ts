@@ -15,3 +15,5 @@ export type Ticket = { id: string; customer_id: string; order_id: string | null;
 export type Trace = { stage?: string; kind?: string; result?: string; role?: string; status?: string; model?: string; reason?: string; latency_ms?: number; tokens?: Record<string, number>; [key: string]: unknown };
 export type Run = { id: string; ticket_id: string; intent: string; decision: string; proposed_reply: string; proposed_action: string | null; reason_codes: string[]; verified_facts: Record<string, unknown>; policy_id: string | null; trace: Trace[]; cost_usd: number; created_at: string };
 export type Product = { id: string; sku: string; name: string; vendor_id: string; category: string; colour: string | null; fabric: string | null; price: number; inventory: Record<string, number>; raw_attributes: Record<string, unknown>; field_provenance: Record<string, unknown>; images: string[]; workflow: { blockers: string[]; [key: string]: unknown }; status: string; target_drop: string };
+
+export type Dashboard = import("./openapi.generated").components["schemas"]["DashboardResponse"];

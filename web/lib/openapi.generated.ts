@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dashboard */
+        get: operations["dashboard_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -372,6 +389,50 @@ export interface components {
             /** Actor */
             actor: string;
         };
+        /** ConfidencePoint */
+        ConfidencePoint: {
+            /** Label */
+            label: string;
+            /** Count */
+            count: number;
+        };
+        /** CountPoint */
+        CountPoint: {
+            /** Label */
+            label: string;
+            /** Value */
+            value: number;
+        };
+        /** DashboardResponse */
+        DashboardResponse: {
+            /** Source */
+            source: string;
+            /** As Of */
+            as_of: string;
+            /** Confidence Count */
+            confidence_count: number;
+            /** Confidence */
+            confidence: components["schemas"]["ConfidencePoint"][];
+            /** Intake */
+            intake: components["schemas"]["IntakePoint"][];
+            /** Languages */
+            languages: components["schemas"]["CountPoint"][];
+            /** Outcomes */
+            outcomes: components["schemas"]["CountPoint"][];
+            /** Processed */
+            processed: number;
+            /** Review Issues */
+            review_issues: components["schemas"]["CountPoint"][];
+            review_heatmap: components["schemas"]["HeatmapData"];
+            /** Review Sentiment */
+            review_sentiment: components["schemas"]["SentimentPoint"][];
+            /** Review Trend */
+            review_trend: components["schemas"]["TrendPoint"][];
+            /** Review Queue */
+            review_queue: components["schemas"]["ReviewQueueItem"][];
+            /** Vendor Completeness */
+            vendor_completeness: components["schemas"]["CountPoint"][];
+        };
         /** DecisionInput */
         DecisionInput: {
             /**
@@ -389,10 +450,33 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HeatRow */
+        HeatRow: {
+            /** Label */
+            label: string;
+            /** Values */
+            values: number[];
+        };
+        /** HeatmapData */
+        HeatmapData: {
+            /** Rows */
+            rows: components["schemas"]["HeatRow"][];
+            /** Columns */
+            columns: string[];
+        };
         /** IntakeCSV */
         IntakeCSV: {
             /** Csv Text */
             csv_text: string;
+        };
+        /** IntakePoint */
+        IntakePoint: {
+            /** Label */
+            label: string;
+            /** Freshdesk */
+            freshdesk: number;
+            /** Whatsapp */
+            whatsapp: number;
         };
         /** InvestigationInput */
         InvestigationInput: {
@@ -432,6 +516,53 @@ export interface components {
              */
             approve_colour_suggestion: boolean;
         };
+        /** ReviewQueueItem */
+        ReviewQueueItem: {
+            /** Ticket Id */
+            ticket_id: string;
+            /** Intent */
+            intent: string;
+            /** Decision */
+            decision: string;
+            /** Reasons */
+            reasons: string[];
+        };
+        /** SentimentPoint */
+        SentimentPoint: {
+            /** Label */
+            label: string;
+            /**
+             * Positive
+             * @default 0
+             */
+            positive: number;
+            /**
+             * Negative
+             * @default 0
+             */
+            negative: number;
+            /**
+             * Mixed
+             * @default 0
+             */
+            mixed: number;
+            /**
+             * Unknown
+             * @default 0
+             */
+            unknown: number;
+        };
+        /** TrendPoint */
+        TrendPoint: {
+            /** Label */
+            label: string;
+            /** Reviews */
+            reviews: number;
+            /** Negative */
+            negative: number;
+            /** Prevalence */
+            prevalence: number | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -454,6 +585,41 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    dashboard_dashboard_get: {
+        parameters: {
+            query?: {
+                category?: string;
+                issue?: string;
+            };
+            header?: {
+                "x-internal-token"?: string | null;
+                "x-demo-session"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_health_get: {
         parameters: {
             query?: never;
@@ -510,6 +676,7 @@ export interface operations {
             query?: never;
             header?: {
                 "x-internal-token"?: string | null;
+                "x-demo-session"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -542,6 +709,8 @@ export interface operations {
                 limit?: number;
                 offset?: number;
                 intent?: string | null;
+                q?: string;
+                channel?: string | null;
                 scenario_only?: boolean;
             };
             header?: {
@@ -714,7 +883,10 @@ export interface operations {
     };
     reviews_overview_reviews_overview_get: {
         parameters: {
-            query?: never;
+            query?: {
+                category?: string;
+                issue?: string;
+            };
             header?: {
                 "x-internal-token"?: string | null;
             };
@@ -745,7 +917,9 @@ export interface operations {
     };
     review_product_reviews_products__product_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                issue?: string;
+            };
             header?: {
                 "x-internal-token"?: string | null;
             };

@@ -11,3 +11,6 @@ __pycache__/
 coverage/
 dist/
 *.tsbuildinfo
+.presentation-build/
+.deployment-build/
+.codex-finalizer/

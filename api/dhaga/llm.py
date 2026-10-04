@@ -48,11 +48,12 @@ def _call(role: str, schema: type[BaseModel], system: str, human: str, temperatu
         raw = response.get("raw")
         usage = getattr(raw, "usage_metadata", None) or {}
         meta = getattr(raw, "response_metadata", None) or {}
-        input_rate, output_rate = MODEL_RATES_PER_MILLION.get(model_name, (0, 0))
+        rates = MODEL_RATES_PER_MILLION.get(model_name)
+        input_rate, output_rate = rates or (0, 0)
         estimated_cost = (usage.get("input_tokens", 0) * input_rate + usage.get("output_tokens", 0) * output_rate) / 1_000_000
         trace = {"role": role, "status": "ok", "model": model_name, "temperature": temperature, "prompt_version": PROMPT_VERSION,
                  "latency_ms": round((time.perf_counter() - started) * 1000), "tokens": usage,
-                 "estimated_cost_usd": round(estimated_cost, 8), "cost_basis": "model_page_rate_snapshot_or_zero_if_unconfigured",
+                 "estimated_cost_usd": round(estimated_cost, 8) if rates and usage else None, "cost_basis": "configured_rate_snapshot" if rates and usage else "unavailable",
                  "provider_metadata": {k: v for k, v in meta.items() if k in {"model_name", "finish_reason", "id"}},
                  "structured_result": parsed.model_dump()}
         return parsed, trace

@@ -6,6 +6,88 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/dashboard": {
+      "get": {
+        "summary": "Dashboard",
+        "operationId": "dashboard_dashboard_get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Category"
+            }
+          },
+          {
+            "name": "issue",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Issue"
+            }
+          },
+          {
+            "name": "x-internal-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Internal-Token"
+            }
+          },
+          {
+            "name": "x-demo-session",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Demo-Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -86,6 +168,22 @@
               ],
               "title": "X-Internal-Token"
             }
+          },
+          {
+            "name": "x-demo-session",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Demo-Session"
+            }
           }
         ],
         "responses": {
@@ -152,6 +250,32 @@
                 }
               ],
               "title": "Intent"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "channel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Channel"
             }
           },
           {
@@ -495,6 +619,26 @@
         "operationId": "reviews_overview_reviews_overview_get",
         "parameters": [
           {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Category"
+            }
+          },
+          {
+            "name": "issue",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Issue"
+            }
+          },
+          {
             "name": "x-internal-token",
             "in": "header",
             "required": false,
@@ -545,6 +689,16 @@
             "schema": {
               "type": "string",
               "title": "Product Id"
+            }
+          },
+          {
+            "name": "issue",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Issue"
             }
           },
           {
@@ -1304,6 +1458,146 @@
         ],
         "title": "CatalogApproval"
       },
+      "ConfidencePoint": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "count"
+        ],
+        "title": "ConfidencePoint"
+      },
+      "CountPoint": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "CountPoint"
+      },
+      "DashboardResponse": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "as_of": {
+            "type": "string",
+            "title": "As Of"
+          },
+          "confidence_count": {
+            "type": "integer",
+            "title": "Confidence Count"
+          },
+          "confidence": {
+            "items": {
+              "$ref": "#/components/schemas/ConfidencePoint"
+            },
+            "type": "array",
+            "title": "Confidence"
+          },
+          "intake": {
+            "items": {
+              "$ref": "#/components/schemas/IntakePoint"
+            },
+            "type": "array",
+            "title": "Intake"
+          },
+          "languages": {
+            "items": {
+              "$ref": "#/components/schemas/CountPoint"
+            },
+            "type": "array",
+            "title": "Languages"
+          },
+          "outcomes": {
+            "items": {
+              "$ref": "#/components/schemas/CountPoint"
+            },
+            "type": "array",
+            "title": "Outcomes"
+          },
+          "processed": {
+            "type": "integer",
+            "title": "Processed"
+          },
+          "review_issues": {
+            "items": {
+              "$ref": "#/components/schemas/CountPoint"
+            },
+            "type": "array",
+            "title": "Review Issues"
+          },
+          "review_heatmap": {
+            "$ref": "#/components/schemas/HeatmapData"
+          },
+          "review_sentiment": {
+            "items": {
+              "$ref": "#/components/schemas/SentimentPoint"
+            },
+            "type": "array",
+            "title": "Review Sentiment"
+          },
+          "review_trend": {
+            "items": {
+              "$ref": "#/components/schemas/TrendPoint"
+            },
+            "type": "array",
+            "title": "Review Trend"
+          },
+          "review_queue": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewQueueItem"
+            },
+            "type": "array",
+            "title": "Review Queue"
+          },
+          "vendor_completeness": {
+            "items": {
+              "$ref": "#/components/schemas/CountPoint"
+            },
+            "type": "array",
+            "title": "Vendor Completeness"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "as_of",
+          "confidence_count",
+          "confidence",
+          "intake",
+          "languages",
+          "outcomes",
+          "processed",
+          "review_issues",
+          "review_heatmap",
+          "review_sentiment",
+          "review_trend",
+          "review_queue",
+          "vendor_completeness"
+        ],
+        "title": "DashboardResponse"
+      },
       "DecisionInput": {
         "properties": {
           "action": {
@@ -1354,6 +1648,51 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HeatRow": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "values": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "values"
+        ],
+        "title": "HeatRow"
+      },
+      "HeatmapData": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/HeatRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows",
+          "columns"
+        ],
+        "title": "HeatmapData"
+      },
       "IntakeCSV": {
         "properties": {
           "csv_text": {
@@ -1368,6 +1707,29 @@
           "csv_text"
         ],
         "title": "IntakeCSV"
+      },
+      "IntakePoint": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "freshdesk": {
+            "type": "integer",
+            "title": "Freshdesk"
+          },
+          "whatsapp": {
+            "type": "integer",
+            "title": "Whatsapp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "freshdesk",
+          "whatsapp"
+        ],
+        "title": "IntakePoint"
       },
       "InvestigationInput": {
         "properties": {
@@ -1466,6 +1828,105 @@
           "actor"
         ],
         "title": "ProductEdit"
+      },
+      "ReviewQueueItem": {
+        "properties": {
+          "ticket_id": {
+            "type": "string",
+            "title": "Ticket Id"
+          },
+          "intent": {
+            "type": "string",
+            "title": "Intent"
+          },
+          "decision": {
+            "type": "string",
+            "title": "Decision"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket_id",
+          "intent",
+          "decision",
+          "reasons"
+        ],
+        "title": "ReviewQueueItem"
+      },
+      "SentimentPoint": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "positive": {
+            "type": "integer",
+            "title": "Positive",
+            "default": 0
+          },
+          "negative": {
+            "type": "integer",
+            "title": "Negative",
+            "default": 0
+          },
+          "mixed": {
+            "type": "integer",
+            "title": "Mixed",
+            "default": 0
+          },
+          "unknown": {
+            "type": "integer",
+            "title": "Unknown",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "label"
+        ],
+        "title": "SentimentPoint"
+      },
+      "TrendPoint": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "reviews": {
+            "type": "integer",
+            "title": "Reviews"
+          },
+          "negative": {
+            "type": "integer",
+            "title": "Negative"
+          },
+          "prevalence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prevalence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "reviews",
+          "negative",
+          "prevalence"
+        ],
+        "title": "TrendPoint"
       },
       "ValidationError": {
         "properties": {
