@@ -9,7 +9,7 @@ config = context.config
 if config.config_file_name:
     fileConfig(config.config_file_name)
 target_metadata = Base.metadata
-database_url = str(engine.url)
+database_url = engine.url.render_as_string(hide_password=False)
 config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 

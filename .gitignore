@@ -14,3 +14,7 @@ dist/
 .presentation-build/
 .deployment-build/
 .codex-finalizer/
+.env.*
+!.env.example
+.agents/
+skills-lock.json
