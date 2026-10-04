@@ -2,6 +2,8 @@
 
 An operations demo with four workspaces: Overview, CX Support, Review Intelligence, and Catalog Velocity Engine. CX handles WISMO, returns, exchanges, refunds, cancellation, payments, and product facts. It simulates verified read-only replies. All consequential actions require a human decision and remain simulated.
 
+**Live product:** https://dhaga-os.vercel.app · **Public code:** https://github.com/SSengupta01/Dhaga_Os · [Deployment verification](DEPLOYMENT_REVIEW.md)
+
 **All operational records are synthetic.** The seven-day return/exchange window and pre-dispatch cancellation rule are **demo policies**, not Dhaga & Co policy. The client brief is the source for the separately labeled company figures. No real customer message, payment, refund, cancellation, or listing publication occurs.
 
 ## Five-minute local start
